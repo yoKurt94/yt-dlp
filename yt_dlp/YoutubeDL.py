@@ -537,6 +537,8 @@ class YoutubeDL:
         'storyboards': {'mhtml'},
     }
 
+    episode = []
+
     def __init__(self, params=None, auto_init=True):
         """Create a FileDownloader object with the given options.
         @param auto_init    Whether to load the default extractors and print header (if verbose).
@@ -544,6 +546,7 @@ class YoutubeDL:
         """
         if params is None:
             params = {}
+        self.episode = []
         self.params = params
         self._ies = {}
         self._ies_instances = {}
@@ -1719,45 +1722,46 @@ class YoutubeDL:
 
         failures = 0
         max_failures = self.params.get('skip_playlist_after_errors') or float('inf')
-        for i, (playlist_index, entry) in enumerate(entries):
-            if lazy:
-                resolved_entries.append((playlist_index, entry))
-
-            # TODO: Add auto-generated fields
-            if not entry or self._match_entry(entry, incomplete=True) is not None:
-                continue
-
-            self.to_screen('[download] Downloading video %s of %s' % (
-                self._format_screen(i + 1, self.Styles.ID), self._format_screen(n_entries, self.Styles.EMPHASIS)))
-
-            entry['__x_forwarded_for_ip'] = ie_result.get('__x_forwarded_for_ip')
-            if not lazy and 'playlist-index' in self.params.get('compat_opts', []):
-                playlist_index = ie_result['requested_entries'][i]
-
-            entry_result = self.__process_iterable_entry(entry, download, {
-                'n_entries': int_or_none(n_entries),
-                '__last_playlist_index': max(ie_result['requested_entries'] or (0, 0)),
-                'playlist_count': ie_result.get('playlist_count'),
-                'playlist_index': playlist_index,
-                'playlist_autonumber': i + 1,
-                'playlist': title,
-                'playlist_id': ie_result.get('id'),
-                'playlist_title': ie_result.get('title'),
-                'playlist_uploader': ie_result.get('uploader'),
-                'playlist_uploader_id': ie_result.get('uploader_id'),
-                'extractor': ie_result['extractor'],
-                'webpage_url': ie_result['webpage_url'],
-                'webpage_url_basename': url_basename(ie_result['webpage_url']),
-                'webpage_url_domain': get_domain(ie_result['webpage_url']),
-                'extractor_key': ie_result['extractor_key'],
-            })
-            if not entry_result:
-                failures += 1
-            if failures >= max_failures:
-                self.report_error(
-                    f'Skipping the remaining entries in playlist "{title}" since {failures} items failed extraction')
-                break
-            resolved_entries[i] = (playlist_index, entry_result)
+        self.episode = entries
+        # for i, (playlist_index, entry) in enumerate(entries):
+        #     if lazy:
+        #         resolved_entries.append((playlist_index, entry))
+        #
+        #     # TODO: Add auto-generated fields
+        #     if not entry or self._match_entry(entry, incomplete=True) is not None:
+        #         continue
+        #
+        #     self.to_screen('[download] Downloading video %s of %s' % (
+        #         self._format_screen(i + 1, self.Styles.ID), self._format_screen(n_entries, self.Styles.EMPHASIS)))
+        #
+        #     entry['__x_forwarded_for_ip'] = ie_result.get('__x_forwarded_for_ip')
+        #     if not lazy and 'playlist-index' in self.params.get('compat_opts', []):
+        #         playlist_index = ie_result['requested_entries'][i]
+        #
+        #     entry_result = self.__process_iterable_entry(entry, download, {
+        #         'n_entries': int_or_none(n_entries),
+        #         '__last_playlist_index': max(ie_result['requested_entries'] or (0, 0)),
+        #         'playlist_count': ie_result.get('playlist_count'),
+        #         'playlist_index': playlist_index,
+        #         'playlist_autonumber': i + 1,
+        #         'playlist': title,
+        #         'playlist_id': ie_result.get('id'),
+        #         'playlist_title': ie_result.get('title'),
+        #         'playlist_uploader': ie_result.get('uploader'),
+        #         'playlist_uploader_id': ie_result.get('uploader_id'),
+        #         'extractor': ie_result['extractor'],
+        #         'webpage_url': ie_result['webpage_url'],
+        #         'webpage_url_basename': url_basename(ie_result['webpage_url']),
+        #         'webpage_url_domain': get_domain(ie_result['webpage_url']),
+        #         'extractor_key': ie_result['extractor_key'],
+        #     })
+        #     if not entry_result:
+        #         failures += 1
+        #     if failures >= max_failures:
+        #         self.report_error(
+        #             f'Skipping the remaining entries in playlist "{title}" since {failures} items failed extraction')
+        #         break
+        #     resolved_entries[i] = (playlist_index, entry_result)
 
         # Update with processed data
         ie_result['requested_entries'], ie_result['entries'] = tuple(zip(*resolved_entries)) or ([], [])
