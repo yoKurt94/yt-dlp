@@ -49,7 +49,10 @@ class AENetworksBaseIE(ThePlatformIE):
             m_url = self._sign_url(m_url, self._THEPLATFORM_KEY, self._THEPLATFORM_SECRET)
             try:
                 tp_formats, tp_subtitles = self._extract_theplatform_smil(
-                    m_url, video_id, 'Downloading %s SMIL data' % (q.get('switch') or q['assetTypes']))
+                    m_url,
+                    video_id,
+                    f"Downloading {q.get('switch') or q['assetTypes']} SMIL data",
+                )
             except ExtractorError as e:
                 if isinstance(e, GeoRestrictedError):
                     raise
@@ -69,8 +72,10 @@ class AENetworksBaseIE(ThePlatformIE):
     def _extract_aetn_info(self, domain, filter_key, filter_value, url):
         requestor_id, brand = self._DOMAIN_MAP[domain]
         result = self._download_json(
-            'https://feeds.video.aetnd.com/api/v2/%s/videos' % brand,
-            filter_value, query={'filter[%s]' % filter_key: filter_value})['results'][0]
+            f'https://feeds.video.aetnd.com/api/v2/{brand}/videos',
+            filter_value,
+            query={f'filter[{filter_key}]': filter_value},
+        )['results'][0]
         title = result['title']
         video_id = result['id']
         media_url = result['publicUrl']
@@ -166,7 +171,7 @@ class AENetworksIE(AENetworksBaseIE):
 
     def _real_extract(self, url):
         domain, canonical = self._match_valid_url(url).groups()
-        return self._extract_aetn_info(domain, 'canonical', '/' + canonical, url)
+        return self._extract_aetn_info(domain, 'canonical', f'/{canonical}', url)
 
 
 class AENetworksListBaseIE(AENetworksBaseIE):
@@ -185,16 +190,14 @@ class AENetworksListBaseIE(AENetworksBaseIE):
         domain, slug = self._match_valid_url(url).groups()
         _, brand = self._DOMAIN_MAP[domain]
         playlist = self._call_api(self._RESOURCE, slug, brand, self._FIELDS)
-        base_url = 'http://watch.%s' % domain
+        base_url = f'http://watch.{domain}'
 
         entries = []
         for item in (playlist.get(self._ITEMS_KEY) or []):
             doc = self._get_doc(item)
-            canonical = doc.get('canonical')
-            if not canonical:
-                continue
-            entries.append(self.url_result(
-                base_url + canonical, AENetworksIE.ie_key(), doc.get('id')))
+            if canonical := doc.get('canonical'):
+                entries.append(self.url_result(
+                    base_url + canonical, AENetworksIE.ie_key(), doc.get('id')))
 
         description = None
         if self._PLAYLIST_DESCRIPTION_KEY:
@@ -294,8 +297,8 @@ class HistoryTopicIE(AENetworksBaseIE):
     def _real_extract(self, url):
         display_id = self._match_id(url)
         return self.url_result(
-            'http://www.history.com/videos/' + display_id,
-            AENetworksIE.ie_key())
+            f'http://www.history.com/videos/{display_id}', AENetworksIE.ie_key()
+        )
 
 
 class HistoryPlayerIE(AENetworksBaseIE):
@@ -332,6 +335,8 @@ class BiographyIE(AENetworksBaseIE):
         display_id = self._match_id(url)
         webpage = self._download_webpage(url, display_id)
         player_url = self._search_regex(
-            r'<phoenix-iframe[^>]+src="(%s)' % HistoryPlayerIE._VALID_URL,
-            webpage, 'player URL')
+            f'<phoenix-iframe[^>]+src="({HistoryPlayerIE._VALID_URL})',
+            webpage,
+            'player URL',
+        )
         return self.url_result(player_url, HistoryPlayerIE.ie_key())

@@ -146,7 +146,7 @@ def expect_value(self, got, expected, field):
             self.assertTrue(
                 isinstance(got, str),
                 f'Expected field {field} to be a unicode object, but got value {got!r} of type {type(got)!r}')
-            got = 'md5:' + md5(got)
+            got = f'md5:{md5(got)}'
         elif isinstance(expected, str) and re.match(r'^(?:min|max)?count:\d+', expected):
             self.assertTrue(
                 isinstance(got, (list, dict)),
@@ -226,10 +226,10 @@ def expect_info_dict(self, got_dict, expected_dict):
         if expected_dict.get('ext'):
             mandatory_fields.extend(('url', 'ext'))
         for key in mandatory_fields:
-            self.assertTrue(got_dict.get(key), 'Missing mandatory field %s' % key)
+            self.assertTrue(got_dict.get(key), f'Missing mandatory field {key}')
     # Check for mandatory fields that are automatically set by YoutubeDL
     for key in ['webpage_url', 'extractor', 'extractor_key']:
-        self.assertTrue(got_dict.get(key), 'Missing field: %s' % key)
+        self.assertTrue(got_dict.get(key), f'Missing field: {key}')
 
     test_info_dict = sanitize_got_info_dict(got_dict)
 
@@ -242,6 +242,7 @@ def expect_info_dict(self, got_dict, expected_dict):
                 return v.__name__
             else:
                 return repr(v)
+
         info_dict_str = ''
         if len(missing_keys) != len(expected_dict):
             info_dict_str += ''.join(
@@ -257,24 +258,20 @@ def expect_info_dict(self, got_dict, expected_dict):
             '\n\'info_dict\': {\n' + info_dict_str + '},\n', out=sys.stderr)
         self.assertFalse(
             missing_keys,
-            'Missing keys in test definition: %s' % (
-                ', '.join(sorted(missing_keys))))
+            f"Missing keys in test definition: {', '.join(sorted(missing_keys))}",
+        )
 
 
 def assertRegexpMatches(self, text, regexp, msg=None):
     if hasattr(self, 'assertRegexp'):
         return self.assertRegexp(text, regexp, msg)
-    else:
-        m = re.match(regexp, text)
-        if not m:
-            note = 'Regexp didn\'t match: %r not found' % (regexp)
-            if len(text) < 1000:
-                note += ' in %r' % text
-            if msg is None:
-                msg = note
-            else:
-                msg = note + ', ' + msg
-            self.assertTrue(m, msg)
+    m = re.match(regexp, text)
+    if not m:
+        note = 'Regexp didn\'t match: %r not found' % (regexp)
+        if len(text) < 1000:
+            note += ' in %r' % text
+        msg = note if msg is None else f'{note}, {msg}'
+        self.assertTrue(m, msg)
 
 
 def assertGreaterEqual(self, got, expected, msg=None):
@@ -292,7 +289,7 @@ def assertLessEqual(self, got, expected, msg=None):
 
 
 def assertEqual(self, got, expected, msg=None):
-    if not (got == expected):
+    if got != expected:
         if msg is None:
             msg = f'{got!r} not equal to {expected!r}'
         self.assertTrue(got == expected, msg)

@@ -23,9 +23,12 @@ class AsianCrushBaseIE(InfoExtractor):
 
     def _call_api(self, host, endpoint, video_id, query, resource):
         return self._download_json(
-            'https://api%s.%s/%s' % (self._API_SUFFIX.get(host, ''), host, endpoint), video_id,
-            'Downloading %s JSON metadata' % resource, query=query,
-            headers=self.geo_verification_headers())['objects']
+            f"https://api{self._API_SUFFIX.get(host, '')}.{host}/{endpoint}",
+            video_id,
+            f'Downloading {resource} JSON metadata',
+            query=query,
+            headers=self.geo_verification_headers(),
+        )['objects']
 
     def _download_object_data(self, host, object_id, resource):
         return self._call_api(
@@ -39,10 +42,8 @@ class AsianCrushBaseIE(InfoExtractor):
 
         entry_id, partner_id = [None] * 2
         for k in self._KALTURA_KEYS:
-            k_url = video.get(k)
-            if k_url:
-                mobj = re.search(r'/p/(\d+)/.+?/entryId/([^/]+)/', k_url)
-                if mobj:
+            if k_url := video.get(k):
+                if mobj := re.search(r'/p/(\d+)/.+?/entryId/([^/]+)/', k_url):
                     partner_id, entry_id = mobj.groups()
                     break
 
@@ -53,12 +54,14 @@ class AsianCrushBaseIE(InfoExtractor):
 
         return {
             '_type': 'url_transparent',
-            'url': 'kaltura:%s:%s' % (partner_id, entry_id),
+            'url': f'kaltura:{partner_id}:{entry_id}',
             'ie_key': KalturaIE.ie_key(),
             'id': entry_id,
             'title': title,
             'description': self._get_object_description(video),
-            'age_limit': parse_age_limit(video.get('mpaa_rating') or video.get('tv_rating')),
+            'age_limit': parse_age_limit(
+                video.get('mpaa_rating') or video.get('tv_rating')
+            ),
             'categories': categories,
             'series': show_info.get('show_name'),
             'season_number': int_or_none(show_info.get('season_num')),

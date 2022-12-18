@@ -24,7 +24,11 @@ class HTTPTestRequestHandler(http.server.BaseHTTPRequestHandler):
         pass
 
     def do_GET(self):
-        if self.path == '/video.html':
+        if (
+            self.path == '/video.html'
+            or self.path != '/vid.mp4'
+            and self.path == '/%E4%B8%AD%E6%96%87.html'
+        ):
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.end_headers()
@@ -34,11 +38,6 @@ class HTTPTestRequestHandler(http.server.BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'video/mp4')
             self.end_headers()
             self.wfile.write(b'\x00\x00\x00\x00\x20\x66\x74[video]')
-        elif self.path == '/%E4%B8%AD%E6%96%87.html':
-            self.send_response(200)
-            self.send_header('Content-Type', 'text/html; charset=utf-8')
-            self.end_headers()
-            self.wfile.write(b'<html><video src="/vid.mp4" /></html>')
         else:
             assert False
 

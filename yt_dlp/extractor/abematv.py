@@ -149,12 +149,12 @@ class AbemaTVBaseIE(InfoExtractor):
         for jld in re.finditer(
                 r'(?is)</span></li></ul><script[^>]+type=(["\']?)application/ld\+json\1[^>]*>(?P<json_ld>.+?)</script>',
                 webpage):
-            jsonld = self._parse_json(jld.group('json_ld'), video_id, fatal=False)
-            if jsonld:
+            if jsonld := self._parse_json(
+                jld.group('json_ld'), video_id, fatal=False
+            ):
                 if jsonld.get('@type') != 'BreadcrumbList':
                     continue
-                trav = traverse_obj(jsonld, ('itemListElement', ..., 'name'))
-                if trav:
+                if trav := traverse_obj(jsonld, ('itemListElement', ..., 'name')):
                     return trav
         return []
 
@@ -275,17 +275,19 @@ class AbemaTVIE(AbemaTVBaseIE):
             return self._MEDIATOKEN
 
         self._MEDIATOKEN = self._download_json(
-            'https://api.abema.io/v1/media/token', None, note='Fetching media token' if to_show else False,
+            'https://api.abema.io/v1/media/token',
+            None,
+            note='Fetching media token' if to_show else False,
             query={
                 'osName': 'android',
                 'osVersion': '6.0.1',
                 'osLang': 'ja_JP',
                 'osTimezone': 'Asia/Tokyo',
                 'appId': 'tv.abema',
-                'appVersion': '3.27.1'
-            }, headers={
-                'Authorization': 'bearer ' + self._get_device_token()
-            })['token']
+                'appVersion': '3.27.1',
+            },
+            headers={'Authorization': f'bearer {self._get_device_token()}'},
+        )['token']
 
         return self._MEDIATOKEN
 
@@ -296,16 +298,19 @@ class AbemaTVIE(AbemaTVBaseIE):
             ep, method = 'oneTimePassword', 'userId'
 
         login_response = self._download_json(
-            f'https://api.abema.io/v1/auth/{ep}', None, note='Logging in',
-            data=json.dumps({
-                method: username,
-                'password': password
-            }).encode('utf-8'), headers={
-                'Authorization': 'bearer ' + self._get_device_token(),
+            f'https://api.abema.io/v1/auth/{ep}',
+            None,
+            note='Logging in',
+            data=json.dumps({method: username, 'password': password}).encode(
+                'utf-8'
+            ),
+            headers={
+                'Authorization': f'bearer {self._get_device_token()}',
                 'Origin': 'https://abema.tv',
                 'Referer': 'https://abema.tv/',
                 'Content-Type': 'application/json',
-            })
+            },
+        )
 
         self._USERTOKEN = login_response['token']
         self._get_media_token(True)
@@ -315,9 +320,7 @@ class AbemaTVIE(AbemaTVBaseIE):
         # and never be fixed in the future; you must trigger downloads by directly specifing URL.
         # (unless there's a way to hook before downloading by extractor)
         video_id, video_type = self._match_valid_url(url).group('id', 'type')
-        headers = {
-            'Authorization': 'Bearer ' + self._get_device_token(),
-        }
+        headers = {'Authorization': f'Bearer {self._get_device_token()}'}
         video_type = video_type.split('/')[-1]
 
         webpage = self._download_webpage(url, video_id)
@@ -348,13 +351,11 @@ class AbemaTVIE(AbemaTVBaseIE):
             for slot in self._TIMETABLE.get('slots', []):
                 if slot.get('channelId') != video_id:
                     continue
-                if slot['startAt'] <= now and now < slot['endAt']:
+                if slot['startAt'] <= now < slot['endAt']:
                     title = slot['title']
                     break
 
-        # read breadcrumb on top of page
-        breadcrumb = self._extract_breadcrumb_list(webpage, video_id)
-        if breadcrumb:
+        if breadcrumb := self._extract_breadcrumb_list(webpage, video_id):
             # breadcrumb list translates to: (example is 1st test for this IE)
             # Home > Anime (genre) > Isekai Shokudo 2 (series name) > Episode 1 "Cheese cakes" "Morning again" (episode title)
             # hence this works
@@ -368,9 +369,9 @@ class AbemaTVIE(AbemaTVBaseIE):
              r'<span\s+class=".+?SlotSummary.+?">(.+?)</span></div><div',),
             webpage, 'description', default=None, group=1)
         if not description:
-            og_desc = self._html_search_meta(
-                ('description', 'og:description', 'twitter:description'), webpage)
-            if og_desc:
+            if og_desc := self._html_search_meta(
+                ('description', 'og:description', 'twitter:description'), webpage
+            ):
                 description = re.sub(r'''(?sx)
                     ^(.+?)(?:
                         アニメの動画を無料で見るならABEMA！| # anime
@@ -378,11 +379,9 @@ class AbemaTVIE(AbemaTVBaseIE):
                     )?
                 ''', r'\1', og_desc)
 
-        # canonical URL may contain series and episode number
-        mobj = re.search(r's(\d+)_p(\d+)$', canonical_url)
-        if mobj:
-            seri = int_or_none(mobj.group(1), default=float('inf'))
-            epis = int_or_none(mobj.group(2), default=float('inf'))
+        if mobj := re.search(r's(\d+)_p(\d+)$', canonical_url):
+            seri = int_or_none(mobj[1], default=float('inf'))
+            epis = int_or_none(mobj[2], default=float('inf'))
             info['series_number'] = seri if seri < 100 else None
             # some anime like Detective Conan (though not available in AbemaTV)
             # has more than 1000 episodes (1026 as of 2021/11/15)

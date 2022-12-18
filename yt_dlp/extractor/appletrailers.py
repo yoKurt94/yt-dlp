@@ -99,8 +99,10 @@ class AppleTrailersIE(InfoExtractor):
         webpage = self._download_webpage(url, movie)
         film_id = self._search_regex(r"FilmId\s*=\s*'(\d+)'", webpage, 'film id')
         film_data = self._download_json(
-            'http://trailers.apple.com/trailers/feeds/data/%s.json' % film_id,
-            film_id, fatal=False)
+            f'http://trailers.apple.com/trailers/feeds/data/{film_id}.json',
+            film_id,
+            fatal=False,
+        )
 
         if film_data:
             entries = []
@@ -113,24 +115,31 @@ class AppleTrailersIE(InfoExtractor):
                         src = size_data.get('src')
                         if not src:
                             continue
-                        formats.append({
-                            'format_id': '%s-%s' % (version, size),
-                            'url': re.sub(r'_(\d+p\.mov)', r'_h\1', src),
-                            'width': int_or_none(size_data.get('width')),
-                            'height': int_or_none(size_data.get('height')),
-                            'language': version[:2],
-                        })
+                        formats.append(
+                            {
+                                'format_id': f'{version}-{size}',
+                                'url': re.sub(r'_(\d+p\.mov)', r'_h\1', src),
+                                'width': int_or_none(size_data.get('width')),
+                                'height': int_or_none(size_data.get('height')),
+                                'language': version[:2],
+                            }
+                        )
                 self._sort_formats(formats)
 
-                entries.append({
-                    'id': movie + '-' + re.sub(r'[^a-zA-Z0-9]', '', clip_title).lower(),
-                    'formats': formats,
-                    'title': clip_title,
-                    'thumbnail': clip.get('screen') or clip.get('thumb'),
-                    'duration': parse_duration(clip.get('runtime') or clip.get('faded')),
-                    'upload_date': unified_strdate(clip.get('posted')),
-                    'uploader_id': uploader_id,
-                })
+                entries.append(
+                    {
+                        'id': f'{movie}-'
+                        + re.sub(r'[^a-zA-Z0-9]', '', clip_title).lower(),
+                        'formats': formats,
+                        'title': clip_title,
+                        'thumbnail': clip.get('screen') or clip.get('thumb'),
+                        'duration': parse_duration(
+                            clip.get('runtime') or clip.get('faded')
+                        ),
+                        'upload_date': unified_strdate(clip.get('posted')),
+                        'uploader_id': uploader_id,
+                    }
+                )
 
             page_data = film_data.get('page', {})
             return self.playlist_result(entries, film_id, page_data.get('movie_title'))
@@ -145,9 +154,11 @@ class AppleTrailersIE(InfoExtractor):
 
             def _clean_json(m):
                 return 'iTunes.playURL(%s);' % m.group(1).replace('\'', '&#39;')
+
             s = re.sub(self._JSON_RE, _clean_json, s)
-            s = '<html>%s</html>' % s
+            s = f'<html>{s}</html>'
             return s
+
         doc = self._download_xml(playlist_url, movie, transform_source=fix_html)
 
         playlist = []
@@ -160,7 +171,7 @@ class AppleTrailersIE(InfoExtractor):
             if not first_url:
                 continue
             title = trailer_info['title']
-            video_id = movie + '-' + re.sub(r'[^a-zA-Z0-9]', '', title).lower()
+            video_id = f'{movie}-' + re.sub(r'[^a-zA-Z0-9]', '', title).lower()
             thumbnail = li.find('.//img').attrib['src']
             upload_date = trailer_info['posted'].replace('-', '')
 
@@ -168,10 +179,12 @@ class AppleTrailersIE(InfoExtractor):
             m = re.search(r'(?P<minutes>[0-9]+):(?P<seconds>[0-9]{1,2})', runtime)
             duration = None
             if m:
-                duration = 60 * int(m.group('minutes')) + int(m.group('seconds'))
+                duration = 60 * int(m['minutes']) + int(m['seconds'])
 
             trailer_id = first_url.split('/')[-1].rpartition('_')[0].lower()
-            settings_json_url = compat_urlparse.urljoin(url, 'includes/settings/%s.json' % trailer_id)
+            settings_json_url = compat_urlparse.urljoin(
+                url, f'includes/settings/{trailer_id}.json'
+            )
             settings = self._download_json(settings_json_url, trailer_id, 'Downloading settings json')
 
             formats = []
@@ -273,8 +286,9 @@ class AppleTrailersSectionIE(InfoExtractor):
     def _real_extract(self, url):
         section = self._match_id(url)
         section_data = self._download_json(
-            'http://trailers.apple.com/trailers/home/feeds/%s.json' % self._SECTIONS[section]['feed_path'],
-            section)
+            f"http://trailers.apple.com/trailers/home/feeds/{self._SECTIONS[section]['feed_path']}.json",
+            section,
+        )
         entries = [
             self.url_result('http://trailers.apple.com' + e['location'])
             for e in section_data]

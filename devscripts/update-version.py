@@ -45,5 +45,5 @@ RELEASE_GIT_HEAD = {GIT_HEAD!r}
 with open('yt_dlp/version.py', 'wt') as f:
     f.write(VERSION_FILE)
 
-print('::set-output name=ytdlp_version::' + VERSION)
+print(f'::set-output name=ytdlp_version::{VERSION}')
 print(f'\nVersion = {VERSION}, Git HEAD = {GIT_HEAD}')

@@ -18,9 +18,13 @@ filename, version = sys.argv[1:]
 
 normalized_version = '.'.join(str(int(x)) for x in version.split('.'))
 
-pypi_release = json.loads(urllib.request.urlopen(
-    'https://pypi.org/pypi/yt-dlp/%s/json' % normalized_version
-).read().decode())
+pypi_release = json.loads(
+    urllib.request.urlopen(
+        f'https://pypi.org/pypi/yt-dlp/{normalized_version}/json'
+    )
+    .read()
+    .decode()
+)
 
 tarball_file = next(x for x in pypi_release['urls'] if x['filename'].endswith('.tar.gz'))
 
@@ -30,8 +34,10 @@ url = tarball_file['url']
 with open(filename) as r:
     formulae_text = r.read()
 
-formulae_text = re.sub(r'sha256 "[0-9a-f]*?"', 'sha256 "%s"' % sha256sum, formulae_text)
-formulae_text = re.sub(r'url "[^"]*?"', 'url "%s"' % url, formulae_text)
+formulae_text = re.sub(
+    r'sha256 "[0-9a-f]*?"', f'sha256 "{sha256sum}"', formulae_text
+)
+formulae_text = re.sub(r'url "[^"]*?"', f'url "{url}"', formulae_text)
 
 with open(filename, 'w') as w:
     w.write(formulae_text)
