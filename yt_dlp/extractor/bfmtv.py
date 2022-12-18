@@ -44,7 +44,7 @@ class BFMTVIE(BFMTVBaseIE):
 
 class BFMTVLiveIE(BFMTVIE):
     IE_NAME = 'bfmtv:live'
-    _VALID_URL = BFMTVBaseIE._VALID_URL_BASE + '(?P<id>(?:[^/]+/)?en-direct)'
+    _VALID_URL = f'{BFMTVBaseIE._VALID_URL_BASE}(?P<id>(?:[^/]+/)?en-direct)'
     _TESTS = [{
         'url': 'https://www.bfmtv.com/en-direct/',
         'info_dict': {
@@ -90,10 +90,8 @@ class BFMTVArticleIE(BFMTVBaseIE):
         entries = []
         for video_block_el in re.findall(self._VIDEO_BLOCK_REGEX, webpage):
             video_block = extract_attributes(video_block_el)
-            video_id = video_block.get('videoid')
-            if not video_id:
-                continue
-            entries.append(self._brightcove_url_result(video_id, video_block))
+            if video_id := video_block.get('videoid'):
+                entries.append(self._brightcove_url_result(video_id, video_block))
 
         return self.playlist_result(
             entries, bfmtv_id, self._og_search_title(webpage, fatal=False),

@@ -160,8 +160,7 @@ class FragmentFD(FileDownloader):
             ctx['live'] = False
         if not ctx['live']:
             total_frags_str = '%d' % ctx['total_frags']
-            ad_frags = ctx.get('ad_frags', 0)
-            if ad_frags:
+            if ad_frags := ctx.get('ad_frags', 0):
                 total_frags_str += ' (not including %d ad)' % ad_frags
         else:
             total_frags_str = 'unknown (live)'
@@ -196,8 +195,7 @@ class FragmentFD(FileDownloader):
                     message = (
                         '.ytdl file is corrupt' if is_corrupt else
                         'Inconsistent state of incomplete fragment download')
-                    self.report_warning(
-                        '%s. Restarting from the beginning ...' % message)
+                    self.report_warning(f'{message}. Restarting from the beginning ...')
                     ctx['fragment_index'] = resume_len = 0
                     if 'ytdl_corrupt' in ctx:
                         del ctx['ytdl_corrupt']
@@ -301,8 +299,7 @@ class FragmentFD(FileDownloader):
         else:
             self.try_rename(ctx['tmpfilename'], ctx['filename'])
             if self.params.get('updatetime', True):
-                filetime = ctx.get('fragment_filetime')
-                if filetime:
+                if filetime := ctx.get('fragment_filetime'):
                     with contextlib.suppress(Exception):
                         os.utime(ctx['filename'], (time.time(), filetime))
             downloaded_bytes = os.path.getsize(encodeFilename(ctx['filename']))
@@ -323,8 +320,7 @@ class FragmentFD(FileDownloader):
             ctx['live'] = False
         if not ctx['live']:
             total_frags_str = '%d' % ctx['total_frags']
-            ad_frags = ctx.get('ad_frags', 0)
-            if ad_frags:
+            if ad_frags := ctx.get('ad_frags', 0):
                 total_frags_str += ' (not including %d ad)' % ad_frags
         else:
             total_frags_str = 'unknown (live)'
@@ -477,7 +473,7 @@ class FragmentFD(FileDownloader):
 
             if count > fragment_retries and fatal:
                 ctx['dest_stream'].close()
-                self.report_error('Giving up after %s fragment retries' % fragment_retries)
+                self.report_error(f'Giving up after {fragment_retries} fragment retries')
 
         def append_fragment(frag_content, frag_index, ctx):
             if frag_content:

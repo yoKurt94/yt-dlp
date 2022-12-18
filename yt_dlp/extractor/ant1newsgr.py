@@ -18,7 +18,7 @@ class Ant1NewsGrBaseIE(InfoExtractor):
         try:
             source = info['url']
         except KeyError:
-            raise ExtractorError('no source found for %s' % video_id)
+            raise ExtractorError(f'no source found for {video_id}')
         formats, subs = (self._extract_m3u8_formats_and_subtitles(source, video_id, 'mp4')
                          if determine_ext(source) == 'm3u8' else ([{'url': source}], {}))
         self._sort_formats(formats)
@@ -91,12 +91,12 @@ class Ant1NewsGrArticleIE(Ant1NewsGrBaseIE):
         video_id = self._match_id(url)
         webpage = self._download_webpage(url, video_id)
         info = self._search_json_ld(webpage, video_id, expected_type='NewsArticle')
-        embed_urls = list(Ant1NewsGrEmbedIE._extract_urls(webpage))
-        if not embed_urls:
-            raise ExtractorError('no videos found for %s' % video_id, expected=True)
-        return self.playlist_from_matches(
-            embed_urls, video_id, info.get('title'), ie=Ant1NewsGrEmbedIE.ie_key(),
-            video_kwargs={'url_transparent': True, 'timestamp': info.get('timestamp')})
+        if embed_urls := list(Ant1NewsGrEmbedIE._extract_urls(webpage)):
+            return self.playlist_from_matches(
+                embed_urls, video_id, info.get('title'), ie=Ant1NewsGrEmbedIE.ie_key(),
+                video_kwargs={'url_transparent': True, 'timestamp': info.get('timestamp')})
+        else:
+            raise ExtractorError(f'no videos found for {video_id}', expected=True)
 
 
 class Ant1NewsGrEmbedIE(Ant1NewsGrBaseIE):

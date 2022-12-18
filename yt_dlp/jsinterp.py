@@ -111,10 +111,10 @@ class JSInterpreter:
         m = re.match(r'(?P<var>var\s)|return(?:\s+|$)', stmt)
         if not m:  # Try interpreting it as an expression
             expr = stmt
-        elif m.group('var'):
-            expr = stmt[len(m.group(0)):]
+        elif m['var']:
+            expr = stmt[len(m[0]):]
         else:
-            expr = stmt[len(m.group(0)):]
+            expr = stmt[len(m[0]):]
             should_abort = True
 
         return self.interpret_expression(expr, local_vars, allow_recursion), should_abort

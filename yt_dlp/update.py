@@ -151,8 +151,7 @@ class Updater:
         """Update yt-dlp executable to the latest version"""
         if not self.check_update():
             return
-        err = is_non_updateable()
-        if err:
+        if err := is_non_updateable():
             return self._report_error(err, True)
         self.ydl.to_screen(f'Updating to version {self.new_version} ...')
 
@@ -205,13 +204,12 @@ class Updater:
             self._report_error('Unable to overwrite current version')
             return os.rename(old_filename, self.filename)
 
-        if detect_variant() not in ('win32_exe', 'py2exe'):
-            if old_filename:
-                os.remove(old_filename)
-        else:
+        if detect_variant() in ('win32_exe', 'py2exe'):
             atexit.register(Popen, f'ping 127.0.0.1 -n 5 -w 1000 & del /F "{old_filename}"',
                             shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+        elif old_filename:
+            os.remove(old_filename)
         self.ydl.to_screen(f'Updated yt-dlp to version {self.new_version}')
         return True
 

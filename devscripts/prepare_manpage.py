@@ -70,7 +70,7 @@ def move_sections(readme):
 
 
 def filter_options(readme):
-    section = re.search(r'(?sm)^# USAGE AND OPTIONS\n.+?(?=^# )', readme).group(0)
+    section = re.search(r'(?sm)^# USAGE AND OPTIONS\n.+?(?=^# )', readme)[0]
     options = '# OPTIONS\n'
     for line in section.split('\n')[1:]:
         mobj = re.fullmatch(r'''(?x)
